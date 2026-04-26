@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
@@ -64,6 +64,19 @@ Robo de motocicletas/vehículos (bajonazo)\t148
 Deficiencias en el alumbrado público\t147"""
 
 
+CONSIDERACIONES_MICMAC = """• El análisis Pareto identifica los descriptores con mayor concentración relativa dentro del conjunto de problemáticas registradas.
+
+• Los descriptores priorizados constituyen el insumo principal para orientar la construcción de la matriz MICMAC.
+
+• La frecuencia de aparición no debe interpretarse como causalidad directa, sino como un criterio inicial de priorización.
+
+• Para el análisis MICMAC, cada descriptor debe valorarse según su nivel de influencia y dependencia frente a las demás variables.
+
+• La definición de relaciones de influencia debe complementarse con criterio técnico, conocimiento territorial y validación institucional.
+
+• El Pareto permite focalizar las variables de análisis; el MICMAC permite profundizar en la estructura relacional entre ellas."""
+
+
 if "tabla_texto_actual" not in st.session_state:
     st.session_state.tabla_texto_actual = TABLA_EJEMPLO
 
@@ -75,6 +88,12 @@ if "modo_ingreso" not in st.session_state:
 
 if "datos_limpiados" not in st.session_state:
     st.session_state.datos_limpiados = False
+
+if "total_general_input" not in st.session_state:
+    st.session_state.total_general_input = 11710
+
+if "total_descriptores_input" not in st.session_state:
+    st.session_state.total_descriptores_input = 88
 
 
 def limpiar_numero(valor):
@@ -250,16 +269,35 @@ def encabezado_pagina(canvas, doc):
     canvas.restoreState()
 
 
+def logo_con_lineas(logo_path):
+    logo = Image(logo_path, width=2.7 * inch, height=2.15 * inch)
+
+    tabla_logo = Table(
+        [["", logo, ""]],
+        colWidths=[2.1 * inch, 2.8 * inch, 2.1 * inch]
+    )
+
+    tabla_logo.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LINEABOVE", (0, 0), (0, 0), 2.2, DORADO),
+        ("LINEABOVE", (2, 0), (2, 0), 2.2, DORADO),
+        ("TOPPADDING", (0, 0), (-1, -1), 18),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+    ]))
+
+    return tabla_logo
+
+
 def portada_pdf(story, styles, datos, logo_path):
     if os.path.exists(logo_path):
-        img = Image(logo_path, width=2.5 * inch, height=2.0 * inch)
-        img.hAlign = "CENTER"
-        story.append(Spacer(1, 0.45 * inch))
-        story.append(img)
+        story.append(Spacer(1, 0.35 * inch))
+        story.append(logo_con_lineas(logo_path))
     else:
         story.append(Spacer(1, 1.3 * inch))
 
-    story.append(Spacer(1, 0.35 * inch))
+    story.append(Spacer(1, 0.25 * inch))
 
     story.append(Paragraph(datos["titulo"], styles["TituloPortada"]))
     story.append(Spacer(1, 0.15 * inch))
@@ -269,12 +307,12 @@ def portada_pdf(story, styles, datos, logo_path):
     story.append(Spacer(1, 0.20 * inch))
     story.append(Paragraph(datos["delegacion"], styles["SubtituloPortada"]))
 
-    story.append(Spacer(1, 0.45 * inch))
+    story.append(Spacer(1, 0.35 * inch))
     story.append(Paragraph(datos["programa"], styles["TextoCentro"]))
     story.append(Spacer(1, 0.10 * inch))
     story.append(Paragraph(f"Fecha de emisión: {datos['fecha_emision']}", styles["TextoCentro"]))
 
-    story.append(Spacer(1, 0.65 * inch))
+    story.append(Spacer(1, 0.50 * inch))
 
     nota = Table(
         [[Paragraph(datos["nota_tecnica"], styles["Nota"])]],
@@ -358,6 +396,23 @@ def tabla_priorizados_pdf(df, styles):
     return table
 
 
+def agregar_consideraciones_micmac(story, styles, texto_consideraciones):
+    story.append(PageBreak())
+
+    story.append(Paragraph("Consideraciones para orientar el análisis MICMAC", styles["TituloSeccionGrande"]))
+    story.append(Spacer(1, 0.20 * inch))
+
+    lineas = [linea.strip() for linea in texto_consideraciones.split("\n") if linea.strip()]
+
+    for linea in lineas:
+        if linea.startswith("•"):
+            texto = linea.replace("•", "").strip()
+            story.append(Paragraph(f"• {texto}", styles["Viñeta"]))
+            story.append(Spacer(1, 0.08 * inch))
+        else:
+            story.append(Paragraph(linea, styles["Parrafo"]))
+
+
 def generar_pdf(datos, df, texto_resultados):
     buffer_pdf = BytesIO()
 
@@ -412,8 +467,8 @@ def generar_pdf(datos, df, texto_resultados):
     styles.add(ParagraphStyle(
         name="Nota",
         parent=styles["Normal"],
-        fontSize=9,
-        leading=12,
+        fontSize=8.8,
+        leading=11.5,
         textColor=colors.HexColor("#263238")
     ))
 
@@ -428,12 +483,35 @@ def generar_pdf(datos, df, texto_resultados):
     ))
 
     styles.add(ParagraphStyle(
+        name="TituloSeccionGrande",
+        parent=styles["Heading1"],
+        textColor=AZUL,
+        fontSize=24,
+        leading=30,
+        alignment=TA_CENTER,
+        spaceBefore=20,
+        spaceAfter=16
+    ))
+
+    styles.add(ParagraphStyle(
         name="Parrafo",
         parent=styles["Normal"],
         alignment=TA_JUSTIFY,
         fontSize=10,
         leading=15,
         spaceAfter=8
+    ))
+
+    styles.add(ParagraphStyle(
+        name="Viñeta",
+        parent=styles["Normal"],
+        alignment=TA_LEFT,
+        fontSize=12,
+        leading=17,
+        leftIndent=18,
+        firstLineIndent=-10,
+        spaceAfter=6,
+        textColor=colors.HexColor("#1F2933")
     ))
 
     styles.add(ParagraphStyle(
@@ -508,19 +586,23 @@ def generar_pdf(datos, df, texto_resultados):
     story.append(Paragraph("Tabla de descriptores priorizados", styles["TituloSeccion"]))
     story.append(tabla_priorizados_pdf(df, styles))
 
+    agregar_consideraciones_micmac(story, styles, datos["consideraciones_micmac"])
+
     story.append(PageBreak())
 
-    story.append(Spacer(1, 1.4 * inch))
+    story.append(Spacer(1, 0.75 * inch))
 
     if os.path.exists(logo_path):
-        img_final = Image(logo_path, width=2.8 * inch, height=2.2 * inch)
-        img_final.hAlign = "CENTER"
-        story.append(img_final)
+        story.append(logo_con_lineas(logo_path))
 
-    story.append(Spacer(1, 0.55 * inch))
+    story.append(Spacer(1, 0.45 * inch))
     story.append(Paragraph(datos["texto_final"], styles["TextoCentro"]))
     story.append(Spacer(1, 0.15 * inch))
     story.append(Paragraph(datos["unidad_final"], styles["TextoCentro"]))
+    story.append(Spacer(1, 0.20 * inch))
+    story.append(Paragraph(f"Realizado por: {datos['realizado_por']}", styles["TextoCentro"]))
+    story.append(Spacer(1, 0.15 * inch))
+    story.append(Paragraph(datos["fuente_informacion"], styles["Nota"]))
 
     doc.build(story, onFirstPage=encabezado_pagina, onLaterPages=encabezado_pagina)
 
@@ -590,6 +672,22 @@ unidad_final = st.sidebar.text_input(
     "Dirección de Programas Policiales Preventivos – MSP"
 )
 
+realizado_por = st.sidebar.text_input(
+    "Nombre de quien realiza el Pareto",
+    "Nombre del analista"
+)
+
+fuente_informacion = st.sidebar.text_area(
+    "Fuente de información",
+    "Fuente: recolección de información, ArcGIS Survey123, Oficina de Planes y Operaciones (OPO), Sistema de Análisis y Estadística (SAE)."
+)
+
+consideraciones_micmac = st.sidebar.text_area(
+    "Consideraciones para orientar el análisis MICMAC",
+    CONSIDERACIONES_MICMAC,
+    height=300
+)
+
 st.subheader("1. Datos generales para el cálculo")
 
 col1, col2 = st.columns(2)
@@ -598,16 +696,16 @@ with col1:
     total_general = st.number_input(
         "Total general de hechos",
         min_value=1,
-        value=11710,
-        step=1
+        step=1,
+        key="total_general_input"
     )
 
 with col2:
     total_descriptores = st.number_input(
         "Total general de descriptores",
         min_value=1,
-        value=88,
-        step=1
+        step=1,
+        key="total_descriptores_input"
     )
 
 st.subheader("2. Ingreso de tabla priorizada")
@@ -618,16 +716,18 @@ with col_limpia:
     limpiar_datos = st.button("Limpiar solo tabla y cálculos")
 
 with col_aviso:
-    st.caption("Este botón no borra la portada, introducción, nota técnica ni texto final. Solo limpia la tabla cargada.")
+    st.caption("Este botón no borra la portada, introducción, nota técnica ni texto final. Solo limpia la tabla cargada y los totales de cálculo.")
 
 if limpiar_datos:
     st.session_state.tabla_texto_actual = TABLA_VACIA
     st.session_state.tabla_texto_widget = TABLA_VACIA
+    st.session_state.total_general_input = 1
+    st.session_state.total_descriptores_input = 1
     st.session_state.datos_limpiados = True
     st.rerun()
 
 if st.session_state.datos_limpiados:
-    st.success("Datos de tabla limpiados. Los textos institucionales se mantienen.")
+    st.success("Datos de tabla y totales limpiados. Los textos institucionales se mantienen.")
 
 opcion = st.radio(
     "Seleccione la forma de ingreso",
@@ -749,7 +849,10 @@ datos_pdf = {
     "introduccion_1": introduccion_1,
     "introduccion_2": introduccion_2,
     "texto_final": texto_final,
-    "unidad_final": unidad_final
+    "unidad_final": unidad_final,
+    "realizado_por": realizado_por,
+    "fuente_informacion": fuente_informacion,
+    "consideraciones_micmac": consideraciones_micmac
 }
 
 st.subheader("7. Descargar informe")

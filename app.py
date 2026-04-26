@@ -853,7 +853,7 @@ datos_pdf = {
     "unidad_final": unidad_final,
     "realizado_por": realizado_por,
     "fuente_informacion": fuente_informacion,
-    "consideraciones_micmac": consideraciones_micmac
+    "consideraciones_micmac": consideraciones
 }
 
 st.subheader("7. Descargar informe")

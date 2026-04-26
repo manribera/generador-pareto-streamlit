@@ -96,6 +96,14 @@ if "total_descriptores_input" not in st.session_state:
     st.session_state.total_descriptores_input = 88
 
 
+def limpiar_solo_tabla_calculos():
+    st.session_state.tabla_texto_actual = TABLA_VACIA
+    st.session_state.tabla_texto_widget = TABLA_VACIA
+    st.session_state.total_general_input = 1
+    st.session_state.total_descriptores_input = 1
+    st.session_state.datos_limpiados = True
+
+
 def limpiar_numero(valor):
     try:
         valor = str(valor).replace("%", "").replace(",", ".").strip()
@@ -364,22 +372,17 @@ def tabla_priorizados_pdf(df, styles):
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, 0), 8.5),
         ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-
         ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
         ("FONTSIZE", (0, 1), (-1, -1), 8),
         ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#1F2933")),
-
         ("ALIGN", (0, 1), (0, -1), "LEFT"),
         ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-
         ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#B8C7D3")),
-
         ("LEFTPADDING", (0, 0), (-1, -1), 7),
         ("RIGHTPADDING", (0, 0), (-1, -1), 7),
         ("TOPPADDING", (0, 0), (-1, -1), 5),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-
         ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#DDEFE7")),
         ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
         ("TEXTCOLOR", (0, -1), (-1, -1), colors.HexColor("#0B3A53")),
@@ -713,18 +716,16 @@ st.subheader("2. Ingreso de tabla priorizada")
 col_limpia, col_aviso = st.columns([1, 3])
 
 with col_limpia:
-    limpiar_datos = st.button("Limpiar solo tabla y cálculos")
+    st.button(
+        "Limpiar solo tabla y cálculos",
+        on_click=limpiar_solo_tabla_calculos
+    )
 
 with col_aviso:
-    st.caption("Este botón no borra la portada, introducción, nota técnica ni texto final. Solo limpia la tabla cargada y los totales de cálculo.")
-
-if limpiar_datos:
-    st.session_state.tabla_texto_actual = TABLA_VACIA
-    st.session_state.tabla_texto_widget = TABLA_VACIA
-    st.session_state.total_general_input = 1
-    st.session_state.total_descriptores_input = 1
-    st.session_state.datos_limpiados = True
-    st.rerun()
+    st.caption(
+        "Este botón no borra la portada, introducción, nota técnica ni texto final. "
+        "Solo limpia la tabla cargada y los totales de cálculo."
+    )
 
 if st.session_state.datos_limpiados:
     st.success("Datos de tabla y totales limpiados. Los textos institucionales se mantienen.")

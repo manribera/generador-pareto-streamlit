@@ -34,7 +34,6 @@ DORADO = colors.HexColor("#C9A227")
 GRIS_CLARO = colors.HexColor("#F2F6F8")
 GRIS_BORDE = colors.HexColor("#CBD5DF")
 
-
 TABLA_VACIA = "Descriptor priorizado\tFrecuencia"
 
 TABLA_EJEMPLO = """Descriptor priorizado\tFrecuencia
@@ -62,7 +61,6 @@ Delitos sexuales\t152
 Falta de salubridad pública\t151
 Robo de motocicletas/vehículos (bajonazo)\t148
 Deficiencias en el alumbrado público\t147"""
-
 
 CONSIDERACIONES_PARETO = """• El análisis Pareto identifica los descriptores con mayor concentración relativa dentro del conjunto de problemáticas registradas.
 
@@ -278,7 +276,7 @@ def encabezado_pagina(canvas, doc):
 
 
 def logo_con_lineas(logo_path):
-    logo = Image(logo_path, width=3.55 * inch, height=2.85 * inch)
+    logo = Image(logo_path, width=3.75 * inch, height=3.00 * inch)
 
     tabla_logo = Table(
         [
@@ -286,18 +284,16 @@ def logo_con_lineas(logo_path):
             ["", "", ""],
             ["", "", ""]
         ],
-        colWidths=[1.80 * inch, 3.60 * inch, 1.80 * inch],
-        rowHeights=[0.82 * inch, 0.06 * inch, 1.95 * inch]
+        colWidths=[1.80 * inch, 3.75 * inch, 1.80 * inch],
+        rowHeights=[0.90 * inch, 0.06 * inch, 2.05 * inch]
     )
 
     tabla_logo.setStyle(TableStyle([
         ("SPAN", (1, 0), (1, 2)),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("ALIGN", (1, 0), (1, 2), "CENTER"),
-
         ("LINEABOVE", (0, 1), (0, 1), 2.2, DORADO),
         ("LINEABOVE", (2, 1), (2, 1), 2.2, DORADO),
-
         ("TOPPADDING", (0, 0), (-1, -1), 0),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
         ("LEFTPADDING", (0, 0), (-1, -1), 0),
@@ -408,11 +404,11 @@ def tabla_priorizados_pdf(df, styles):
     return table
 
 
-def agregar_consideraciones(story, styles, texto_consideraciones):
+def agregar_consideraciones(story, styles, texto_consideraciones, datos):
     story.append(PageBreak())
 
     story.append(Paragraph("Consideraciones del análisis Pareto", styles["TituloSeccionGrande"]))
-    story.append(Spacer(1, 0.20 * inch))
+    story.append(Spacer(1, 0.18 * inch))
 
     lineas = [linea.strip() for linea in texto_consideraciones.split("\n") if linea.strip()]
 
@@ -420,9 +416,26 @@ def agregar_consideraciones(story, styles, texto_consideraciones):
         if linea.startswith("•"):
             texto = linea.replace("•", "").strip()
             story.append(Paragraph(f"• {texto}", styles["Viñeta"]))
-            story.append(Spacer(1, 0.08 * inch))
+            story.append(Spacer(1, 0.05 * inch))
         else:
             story.append(Paragraph(linea, styles["Parrafo"]))
+
+    story.append(Spacer(1, 0.25 * inch))
+    story.append(Paragraph(datos["texto_final"], styles["TextoCentro"]))
+    story.append(Spacer(1, 0.10 * inch))
+    story.append(Paragraph(f"Realizado por: {datos['realizado_por']}", styles["TextoCentro"]))
+    story.append(Spacer(1, 0.10 * inch))
+    story.append(Paragraph(datos["fuente_informacion"], styles["NotaCentro"]))
+
+
+def agregar_hoja_final_logo(story, logo_path):
+    story.append(PageBreak())
+    story.append(Spacer(1, 2.35 * inch))
+
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=4.25 * inch, height=3.40 * inch)
+        logo.hAlign = "CENTER"
+        story.append(logo)
 
 
 def generar_pdf(datos, df, texto_resultados):
@@ -472,8 +485,8 @@ def generar_pdf(datos, df, texto_resultados):
         name="TextoCentro",
         parent=styles["Normal"],
         alignment=TA_CENTER,
-        fontSize=11,
-        leading=15
+        fontSize=10.5,
+        leading=14
     ))
 
     styles.add(ParagraphStyle(
@@ -481,6 +494,15 @@ def generar_pdf(datos, df, texto_resultados):
         parent=styles["Normal"],
         fontSize=8.8,
         leading=11.5,
+        textColor=colors.HexColor("#263238")
+    ))
+
+    styles.add(ParagraphStyle(
+        name="NotaCentro",
+        parent=styles["Normal"],
+        fontSize=8.5,
+        leading=11,
+        alignment=TA_CENTER,
         textColor=colors.HexColor("#263238")
     ))
 
@@ -498,11 +520,11 @@ def generar_pdf(datos, df, texto_resultados):
         name="TituloSeccionGrande",
         parent=styles["Heading1"],
         textColor=AZUL,
-        fontSize=24,
-        leading=30,
+        fontSize=22,
+        leading=27,
         alignment=TA_CENTER,
-        spaceBefore=20,
-        spaceAfter=16
+        spaceBefore=10,
+        spaceAfter=10
     ))
 
     styles.add(ParagraphStyle(
@@ -518,11 +540,11 @@ def generar_pdf(datos, df, texto_resultados):
         name="Viñeta",
         parent=styles["Normal"],
         alignment=TA_LEFT,
-        fontSize=12,
-        leading=17,
+        fontSize=10.5,
+        leading=14,
         leftIndent=18,
         firstLineIndent=-10,
-        spaceAfter=6,
+        spaceAfter=4,
         textColor=colors.HexColor("#1F2933")
     ))
 
@@ -598,23 +620,9 @@ def generar_pdf(datos, df, texto_resultados):
     story.append(Paragraph("Tabla de descriptores priorizados", styles["TituloSeccion"]))
     story.append(tabla_priorizados_pdf(df, styles))
 
-    agregar_consideraciones(story, styles, datos["consideraciones_pareto"])
+    agregar_consideraciones(story, styles, datos["consideraciones_pareto"], datos)
 
-    story.append(PageBreak())
-
-    story.append(Spacer(1, 0.35 * inch))
-
-    if os.path.exists(logo_path):
-        story.append(logo_con_lineas(logo_path))
-
-    story.append(Spacer(1, 0.35 * inch))
-    story.append(Paragraph(datos["texto_final"], styles["TextoCentro"]))
-    story.append(Spacer(1, 0.15 * inch))
-    story.append(Paragraph(datos["unidad_final"], styles["TextoCentro"]))
-    story.append(Spacer(1, 0.20 * inch))
-    story.append(Paragraph(f"Realizado por: {datos['realizado_por']}", styles["TextoCentro"]))
-    story.append(Spacer(1, 0.15 * inch))
-    story.append(Paragraph(datos["fuente_informacion"], styles["Nota"]))
+    agregar_hoja_final_logo(story, logo_path)
 
     doc.build(story, onFirstPage=encabezado_pagina, onLaterPages=encabezado_pagina)
 
@@ -675,13 +683,8 @@ introduccion_2 = st.sidebar.text_area(
 )
 
 texto_final = st.sidebar.text_area(
-    "Texto página final",
+    "Texto final en consideraciones",
     "Elaborado por la Estrategia Integral de Prevención para la Seguridad Pública “Sembremos Seguridad”."
-)
-
-unidad_final = st.sidebar.text_input(
-    "Unidad final",
-    "Dirección de Programas Policiales Preventivos – MSP"
 )
 
 realizado_por = st.sidebar.text_input(
@@ -859,7 +862,6 @@ datos_pdf = {
     "introduccion_1": introduccion_1,
     "introduccion_2": introduccion_2,
     "texto_final": texto_final,
-    "unidad_final": unidad_final,
     "realizado_por": realizado_por,
     "fuente_informacion": fuente_informacion,
     "consideraciones_pareto": consideraciones_pareto

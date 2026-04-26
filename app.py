@@ -44,6 +44,23 @@ def limpiar_numero(valor):
         return 0
 
 
+def limpiar_nombre_archivo(texto):
+    texto = str(texto)
+    caracteres_no_validos = ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]
+
+    for c in caracteres_no_validos:
+        texto = texto.replace(c, "")
+
+    texto = texto.replace("Delegación", "")
+    texto = texto.replace("Delegacion", "")
+    texto = texto.replace("delegación", "")
+    texto = texto.replace("delegacion", "")
+    texto = texto.replace("_", " ")
+    texto = " ".join(texto.split())
+
+    return texto.strip()
+
+
 def leer_tabla_pegada(texto):
     texto = texto.strip()
 
@@ -68,8 +85,10 @@ def leer_tabla_pegada(texto):
 
     for col in df.columns:
         nombre = str(col).lower().strip()
+
         if "descriptor" in nombre or "problem" in nombre:
             col_descriptor = col
+
         if "frecuencia" in nombre or "cantidad" in nombre or "casos" in nombre:
             col_frecuencia = col
 
@@ -646,7 +665,12 @@ st.subheader("7. Descargar informe")
 
 pdf_buffer = generar_pdf(datos_pdf, df, texto_resultados)
 
-nombre_pdf = f"Informe_Pareto_{delegacion.replace(' ', '_').replace(':', '')}_{fecha_emision.replace('/', '-')}.pdf"
+nombre_delegacion = limpiar_nombre_archivo(delegacion)
+
+if not nombre_delegacion:
+    nombre_delegacion = "Sin nombre"
+
+nombre_pdf = f"Pareto General Delegación {nombre_delegacion}.pdf"
 
 st.download_button(
     label="Descargar PDF",
@@ -660,9 +684,11 @@ df_exportar = df.copy()
 df_exportar.to_excel(excel_buffer, index=False)
 excel_buffer.seek(0)
 
+nombre_excel = f"Tabla Pareto General Delegación {nombre_delegacion}.xlsx"
+
 st.download_button(
     label="Descargar Excel procesado",
     data=excel_buffer,
-    file_name="tabla_pareto_procesada.xlsx",
+    file_name=nombre_excel,
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )

@@ -35,6 +35,46 @@ GRIS_CLARO = colors.HexColor("#F2F6F8")
 GRIS_BORDE = colors.HexColor("#CBD5DF")
 
 
+TABLA_VACIA = "Descriptor priorizado\tFrecuencia"
+
+
+TABLA_EJEMPLO = """Descriptor priorizado\tFrecuencia
+Consumo de drogas\t1787
+Estafa o defraudación\t637
+Robo a personas\t587
+Falta de inversión social\t544
+Hurto\t508
+Deficiencia en la infraestructura vial\t476
+Venta de drogas\t472
+Personas en situación de calle\t358
+Consumo de alcohol en vía pública\t343
+Robo a vehículos (tacha)\t343
+Disturbios (riñas)\t325
+Daños/vandalismo\t316
+Puntos de venta y consumo de drogas\t314
+Robo a comercio (tacha)\t305
+Robo a comercio (intimidación)\t299
+Lesiones\t275
+Robo a vivienda (tacha)\t233
+Homicidio\t224
+Violencia intrafamiliar\t210
+Robo de vehículos\t168
+Delitos sexuales\t152
+Falta de salubridad pública\t151
+Robo de motocicletas/vehículos (bajonazo)\t148
+Deficiencias en el alumbrado público\t147"""
+
+
+if "tabla_texto_actual" not in st.session_state:
+    st.session_state.tabla_texto_actual = TABLA_EJEMPLO
+
+if "modo_ingreso" not in st.session_state:
+    st.session_state.modo_ingreso = "Pegar tabla"
+
+if "datos_limpiados" not in st.session_state:
+    st.session_state.datos_limpiados = False
+
+
 def limpiar_numero(valor):
     try:
         valor = str(valor).replace("%", "").replace(",", ".").strip()
@@ -64,7 +104,7 @@ def limpiar_nombre_archivo(texto):
 def leer_tabla_pegada(texto):
     texto = texto.strip()
 
-    if not texto:
+    if not texto or texto == TABLA_VACIA:
         return pd.DataFrame(columns=["Descriptor priorizado", "Frecuencia"])
 
     try:
@@ -558,10 +598,27 @@ with col2:
 
 st.subheader("2. Ingreso de tabla priorizada")
 
+col_limpia, col_aviso = st.columns([1, 3])
+
+with col_limpia:
+    limpiar_datos = st.button("Limpiar solo tabla y cálculos")
+
+with col_aviso:
+    st.caption("Este botón no borra la portada, introducción, nota técnica ni texto final. Solo limpia la tabla cargada.")
+
+if limpiar_datos:
+    st.session_state.tabla_texto_actual = TABLA_VACIA
+    st.session_state.datos_limpiados = True
+    st.rerun()
+
+if st.session_state.datos_limpiados:
+    st.success("Datos de tabla limpiados. Los textos institucionales se mantienen.")
+
 opcion = st.radio(
     "Seleccione la forma de ingreso",
     ["Pegar tabla", "Subir Excel o CSV"],
-    horizontal=True
+    horizontal=True,
+    key="modo_ingreso"
 )
 
 df_base = pd.DataFrame(columns=["Descriptor priorizado", "Frecuencia"])
@@ -571,37 +628,18 @@ if opcion == "Pegar tabla":
 
     tabla_texto = st.text_area(
         "Pegar tabla aquí",
-        """Descriptor priorizado\tFrecuencia
-Consumo de drogas\t1787
-Estafa o defraudación\t637
-Robo a personas\t587
-Falta de inversión social\t544
-Hurto\t508
-Deficiencia en la infraestructura vial\t476
-Venta de drogas\t472
-Personas en situación de calle\t358
-Consumo de alcohol en vía pública\t343
-Robo a vehículos (tacha)\t343
-Disturbios (riñas)\t325
-Daños/vandalismo\t316
-Puntos de venta y consumo de drogas\t314
-Robo a comercio (tacha)\t305
-Robo a comercio (intimidación)\t299
-Lesiones\t275
-Robo a vivienda (tacha)\t233
-Homicidio\t224
-Violencia intrafamiliar\t210
-Robo de vehículos\t168
-Delitos sexuales\t152
-Falta de salubridad pública\t151
-Robo de motocicletas/vehículos (bajonazo)\t148
-Deficiencias en el alumbrado público\t147""",
-        height=320
+        value=st.session_state.tabla_texto_actual,
+        height=320,
+        key="tabla_texto_widget"
     )
+
+    st.session_state.tabla_texto_actual = tabla_texto
 
     df_base = leer_tabla_pegada(tabla_texto)
 
 else:
+    st.warning("Si desea limpiar un archivo cargado, presione el botón de limpieza y vuelva a cargar el archivo.")
+
     archivo = st.file_uploader("Subir archivo Excel o CSV", type=["xlsx", "csv"])
 
     if archivo is not None:

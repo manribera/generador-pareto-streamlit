@@ -37,7 +37,6 @@ GRIS_BORDE = colors.HexColor("#CBD5DF")
 
 TABLA_VACIA = "Descriptor priorizado\tFrecuencia"
 
-
 TABLA_EJEMPLO = """Descriptor priorizado\tFrecuencia
 Consumo de drogas\t1787
 Estafa o defraudación\t637
@@ -169,13 +168,15 @@ def procesar_df(df, total_general):
 
 
 def crear_grafico_pareto(df):
-    fig, ax1 = plt.subplots(figsize=(13.5, 5.8))
+    fig, ax1 = plt.subplots(figsize=(13.5, 7.2))
 
     color_barras = "#1B9E77"
     color_linea = "#0B3A53"
 
+    x = list(range(len(df)))
+
     ax1.bar(
-        df["Descriptor priorizado"],
+        x,
         df["Frecuencia"],
         color=color_barras,
         edgecolor="#0B3A53",
@@ -185,14 +186,21 @@ def crear_grafico_pareto(df):
     ax1.set_ylabel("Frecuencia", fontsize=9)
     ax1.set_xlabel("Descriptor priorizado", fontsize=8)
 
-    ax1.tick_params(axis="x", rotation=60, labelsize=6.5)
-    ax1.tick_params(axis="y", labelsize=8)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(
+        df["Descriptor priorizado"],
+        rotation=90,
+        ha="center",
+        va="top",
+        fontsize=6.4
+    )
 
+    ax1.tick_params(axis="y", labelsize=8)
     ax1.grid(axis="y", linestyle="--", alpha=0.35)
 
     ax2 = ax1.twinx()
     ax2.plot(
-        df["Descriptor priorizado"],
+        x,
         df["Porcentaje acumulado"],
         color=color_linea,
         marker="o",
@@ -211,10 +219,11 @@ def crear_grafico_pareto(df):
         pad=8
     )
 
+    fig.subplots_adjust(bottom=0.45)
     plt.tight_layout()
 
     buffer = BytesIO()
-    fig.savefig(buffer, format="png", dpi=200, bbox_inches="tight")
+    fig.savefig(buffer, format="png", dpi=220, bbox_inches="tight")
     buffer.seek(0)
     plt.close(fig)
 
@@ -268,6 +277,7 @@ def portada_pdf(story, styles, datos, logo_path):
         [[Paragraph(datos["nota_tecnica"], styles["Nota"])]],
         colWidths=[6.6 * inch]
     )
+
     nota.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#EEF5F9")),
         ("BOX", (0, 0), (-1, -1), 0.7, GRIS_BORDE),
@@ -276,8 +286,8 @@ def portada_pdf(story, styles, datos, logo_path):
         ("TOPPADDING", (0, 0), (-1, -1), 10),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
     ]))
-    story.append(nota)
 
+    story.append(nota)
     story.append(PageBreak())
 
 
@@ -450,7 +460,6 @@ def generar_pdf(datos, df, texto_resultados):
     ))
 
     story = []
-
     logo_path = "001.png"
 
     portada_pdf(story, styles, datos, logo_path)
@@ -466,6 +475,7 @@ def generar_pdf(datos, df, texto_resultados):
         [[Paragraph(texto_resultados, styles["Resultado"])]],
         colWidths=[6.7 * inch]
     )
+
     caja_resultados.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F2F6F8")),
         ("BOX", (0, 0), (-1, -1), 0.7, GRIS_BORDE),
@@ -474,6 +484,7 @@ def generar_pdf(datos, df, texto_resultados):
         ("TOPPADDING", (0, 0), (-1, -1), 8),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
+
     story.append(caja_resultados)
 
     story.append(Spacer(1, 0.15 * inch))
@@ -485,7 +496,7 @@ def generar_pdf(datos, df, texto_resultados):
         tmp.write(chart_buffer.getvalue())
         chart_path = tmp.name
 
-    chart_img = Image(chart_path, width=6.7 * inch, height=3.2 * inch)
+    chart_img = Image(chart_path, width=6.7 * inch, height=3.55 * inch)
     chart_img.hAlign = "CENTER"
     story.append(chart_img)
 

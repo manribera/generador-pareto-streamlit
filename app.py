@@ -67,6 +67,9 @@ Deficiencias en el alumbrado público\t147"""
 if "tabla_texto_actual" not in st.session_state:
     st.session_state.tabla_texto_actual = TABLA_EJEMPLO
 
+if "tabla_texto_widget" not in st.session_state:
+    st.session_state.tabla_texto_widget = st.session_state.tabla_texto_actual
+
 if "modo_ingreso" not in st.session_state:
     st.session_state.modo_ingreso = "Pegar tabla"
 
@@ -619,6 +622,7 @@ with col_aviso:
 
 if limpiar_datos:
     st.session_state.tabla_texto_actual = TABLA_VACIA
+    st.session_state.tabla_texto_widget = TABLA_VACIA
     st.session_state.datos_limpiados = True
     st.rerun()
 
@@ -639,7 +643,6 @@ if opcion == "Pegar tabla":
 
     tabla_texto = st.text_area(
         "Pegar tabla aquí",
-        value=st.session_state.tabla_texto_actual,
         height=320,
         key="tabla_texto_widget"
     )
